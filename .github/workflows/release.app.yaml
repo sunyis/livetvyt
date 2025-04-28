@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '>=1.23'
-          cache: 'gomod'
+          cache: 'true'  # 修改为布尔类型 'true'
         env:
           CGO_ENABLED: '1'
 
@@ -39,7 +39,7 @@ jobs:
           name: livetv_linux_amd64
           path: livetv_linux_amd64
 
-  # 其他构建任务（linux_arm64_build, darwin_amd64_build, etc.）类似地添加 CGO_ENABLED=1
+  # 其他构建任务（如 linux_arm64_build, darwin_amd64_build 等）类似地修改 `cache` 字段
   linux_arm64_build:
     runs-on: ubuntu-latest
     steps:
@@ -52,7 +52,7 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '>=1.23'
-          cache: 'gomod'
+          cache: 'true'  # 修改为布尔类型 'true'
         env:
           CGO_ENABLED: '1'
 
@@ -66,87 +66,3 @@ jobs:
         with:
           name: livetv_linux_arm64
           path: livetv_linux_arm64
-
-  darwin_amd64_build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      # 对于 Darwin，可能需要安装不同的库或使用 brew
-      - name: Install SQLite Development Libraries for Darwin
-        run: brew install sqlite3
-
-      - name: Set up Go environment with CGO enabled
-        uses: actions/setup-go@v4
-        with:
-          go-version: '>=1.23'
-          cache: 'gomod'
-        env:
-          CGO_ENABLED: '1'
-
-      - name: Cross Compile
-        run: |
-          export CGO_ENABLED=1
-          GOOS=darwin GOARCH=amd64 go build -o livetv_darwin_amd64
-
-      - name: Upload Cross Compile Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: livetv_darwin_amd64
-          path: livetv_darwin_amd64
-
-  darwin_arm64_build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      # 对于 Darwin，可能需要安装不同的库或使用 brew
-      - name: Install SQLite Development Libraries for Darwin
-        run: brew install sqlite3
-
-      - name: Set up Go environment with CGO enabled
-        uses: actions/setup-go@v4
-        with:
-          go-version: '>=1.23'
-          cache: 'gomod'
-        env:
-          CGO_ENABLED: '1'
-
-      - name: Cross Compile
-        run: |
-          export CGO_ENABLED=1
-          GOOS=darwin GOARCH=arm64 go build -o livetv_darwin_arm64
-
-      - name: Upload Cross Compile Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: livetv_darwin_arm64
-          path: livetv_darwin_arm64
-  
-  windows_amd64_build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      # Windows 上安装 SQLite 开发库的方式可能不同，可以使用 choco 或其他包管理工具
-      - name: Install SQLite Development Libraries for Windows
-        run: sudo apt-get install -y libsqlite3-dev # 或者使用适用于 Windows 的方法
-
-      - name: Set up Go environment with CGO enabled
-        uses: actions/setup-go@v4
-        with:
-          go-version: '>=1.23'
-          cache: 'gomod'
-        env:
-          CGO_ENABLED: '1'
-
-      - name: Cross Compile
-        run: |
-          export CGO_ENABLED=1
-          GOOS=windows GOARCH=amd64 go build -o livetv_windows_amd64.exe
-
-      - name: Upload Cross Compile Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: livetv_windows_amd64
-          path: livetv_windows_amd64.exe
