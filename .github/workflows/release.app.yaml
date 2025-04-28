@@ -1,12 +1,20 @@
-name: release app
+name: Build and Release Go Binaries
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release Tag (e.g., 0.1.0)'
+        description: 'Release Tag (e.g., v1.0.0)'
         required: true
-        default: '1.'
+        default: 'v1.0.0'
+  push:
+    branches: ["main"]
+    paths:
+      - '**.go'
+  pull_request:
+    branches: ["main"]
+    paths:
+      - '**.go'
 
 jobs:
   build:
@@ -14,43 +22,31 @@ jobs:
     timeout-minutes: 30
     strategy:
       fail-fast: false
-    name: Build and Release
+      matrix:
+        include:
+          - job_name: goreleaser_build
+    name: ${{ matrix.job_name }}
     steps:
-      - name: Checkout Source
-        uses: actions/checkout@v3
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Ensures GoReleaser can access full git history
+          fetch-depth: 0  # Needed by GoReleaser for git information
 
-      - name: Set Up Go Environment
+      - name: Set up Go Environment
         uses: actions/setup-go@v4
         with:
-          go-version: ^1.22
-          cache: true
+          go-version: ^1.20
 
-      - name: Install GoReleaser
-        run: |
-          GORELEASER_VERSION=$(curl -s "https://api.github.com/repos/goreleaser/goreleaser/releases/latest" | grep 'tag_name' | cut -d '"' -f 4)
-          curl -sL "https://github.com/goreleaser/goreleaser/releases/download/${GORELEASER_VERSION}/goreleaser_${GORELEASER_VERSION}_Linux_x86_64.tar.gz" | tar -xz -C /usr/local/bin
-          # Alternatively, you can use a predefined version if you prefer
-          # curl -sL "https://github.com/goreleaser/goreleaser/releases/download/vX.Y.Z/goreleaser_vX.Y.Z_Linux_x86_64.tar.gz" | tar -xz -C /usr/local/bin
+      - name: Run GoReleaser for Cross-Compilation
+        uses: goreleaser/goreleaser-action@v3
+        with:
+          version: ${{ github.event.inputs.tag }}
+          ldflags: "-s -w -X main.version=${{ github.event.inputs.tag }}"
+          targets: ["bin"]
         env:
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
 
-      - name: Run GoReleaser
-        run: |
-          goreleaser release \
-            --rm-dist \
-            --snapshot \
-            --skip-publish \
-            --id-prefix "github-actions-" \
-            --parallelism=2 \
-            --timeout=15m \
-            --archive-formats="zip" \
-            --platforms="linux/amd64,linux/arm64"
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
-
-      - name: Upload to GitHub Release
+      - name: Upload Release Artifacts
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag }}
@@ -64,10 +60,10 @@ jobs:
     needs: build
     if: always()
     steps:
-      - name: Delete workflow runs
+      - name: Delete old workflow runs
         uses: Mattraks/delete-workflow-runs@main
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
-          retain_days: 1
-          keep_minimum_runs: 0
+          retain_days: 7
+          keep_minimum_runs: 5
