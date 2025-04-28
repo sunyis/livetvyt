@@ -16,53 +16,92 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install SQLite Development Libraries
-        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
-
-      - name: Set up Go environment with CGO enabled
-        uses: actions/setup-go@v4
-        with:
-          go-version: '>=1.23'
-          cache: 'true'  # 修改为布尔类型 'true'
+      - name: Install gcc
+        run: sudo apt-get update && sudo apt-get install -y gcc
+      - name: Cross Compile with CGO
         env:
-          CGO_ENABLED: '1'
-
-      - name: Cross Compile
-        run: |
-          export CGO_ENABLED=1
-          GOOS=linux GOARCH=amd64 go build -o livetv_linux_amd64
-
+          CGO_ENABLED: 1
+          GOOS: linux
+          GOARCH: amd64
+        run: go build -o livetv_linux_amd64 -ldflags="-linkmode external -extldflags '-lm -lsqlite3'"
       - name: Upload Cross Compile Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: livetv_linux_amd64
           path: livetv_linux_amd64
 
-  # 其他构建任务（如 linux_arm64_build, darwin_amd64_build 等）类似地修改 `cache` 字段
   linux_arm64_build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install SQLite Development Libraries
-        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
-
-      - name: Set up Go environment with CGO enabled
-        uses: actions/setup-go@v4
-        with:
-          go-version: '>=1.23'
-          cache: 'true'  # 修改为布尔类型 'true'
+      - name: Install gcc
+        run: sudo apt-get update && sudo apt-get install -y gcc
+      - name: Cross Compile with CGO
         env:
-          CGO_ENABLED: '1'
-
-      - name: Cross Compile
-        run: |
-          export CGO_ENABLED=1
-          GOOS=linux GOARCH=arm64 go build -o livetv_linux_arm64
-
+          CGO_ENABLED: 1
+          GOOS: linux
+          GOARCH: arm64
+        run: go build -o livetv_linux_arm64 -ldflags="-linkmode external -extldflags '-lm -lsqlite3'"
       - name: Upload Cross Compile Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: livetv_linux_arm64
           path: livetv_linux_arm64
+
+  darwin_amd64_build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install gcc
+        run: brew install gcc
+      - name: Cross Compile with CGO
+        env:
+          CGO_ENABLED: 1
+          GOOS: darwin
+          GOARCH: amd64
+        run: go build -o livetv_darwin_amd64 -ldflags="-linkmode external -extldflags '-lm -lsqlite3'"
+      - name: Upload Cross Compile Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: livetv_darwin_amd64
+          path: livetv_darwin_amd64
+
+  darwin_arm64_build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install gcc
+        run: brew install gcc
+      - name: Cross Compile with CGO
+        env:
+          CGO_ENABLED: 1
+          GOOS: darwin
+          GOARCH: arm64
+        run: go build -o livetv_darwin_arm64 -ldflags="-linkmode external -extldflags '-lm -lsqlite3'"
+      - name: Upload Cross Compile Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: livetv_darwin_arm64
+          path: livetv_darwin_arm64
+  
+  windows_amd64_build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install gcc (MinGW)
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          msystem: MSYS
+          packages: mingw-w64-x86_64-gcc
+      - name: Cross Compile with CGO
+        env:
+          CGO_ENABLED: 1
+          GOOS: windows
+          GOARCH: amd64
+        run: go build -o livetv_windows_amd64.exe -ldflags="-linkmode external -extldflags '-lm -lsqlite3'"
+      - name: Upload Cross Compile Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: livetv_windows_amd64
+          path: livetv_windows_amd64.exe    
