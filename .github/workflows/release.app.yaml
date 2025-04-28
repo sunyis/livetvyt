@@ -27,8 +27,16 @@ jobs:
           go-version: ^1.22
           cache: true
 
+      - name: Install GoReleaser
+        run: |
+          GORELEASER_VERSION=$(curl -s "https://api.github.com/repos/goreleaser/goreleaser/releases/latest" | grep 'tag_name' | cut -d '"' -f 4)
+          curl -sL "https://github.com/goreleaser/goreleaser/releases/download/${GORELEASER_VERSION}/goreleaser_${GORELEASER_VERSION}_Linux_x86_64.tar.gz" | tar -xz -C /usr/local/bin
+          # Alternatively, you can use a predefined version if you prefer
+          # curl -sL "https://github.com/goreleaser/goreleaser/releases/download/vX.Y.Z/goreleaser_vX.Y.Z_Linux_x86_64.tar.gz" | tar -xz -C /usr/local/bin
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+
       - name: Run GoReleaser
-        # Using GoReleaser directly instead of Docker for simplicity
         run: |
           goreleaser release \
             --rm-dist \
